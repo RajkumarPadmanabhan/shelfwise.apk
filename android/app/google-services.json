@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "496935493651",
+    "project_id": "shelfapk",
+    "storage_bucket": "shelfapk.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:496935493651:android:88cae55dc3735c8d0e5fe6",
+        "android_client_info": {
+          "package_name": "io.github.mrwhoroot.shelfwise"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "496935493651-vliu7m95ru6jjoihkl987ufnvoolmoic.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.github.mrwhoroot.shelfwise",
+            "certificate_hash": "b5f9dfff436541429958efdcb502c14524061198"
+          }
+        },
+        {
+          "client_id": "496935493651-uuo8aast3i61mqm0he912hinhi95pt3t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsiMOJEQ7gE9L1Z6zy4_AQmRRsQHO8RXg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "496935493651-uuo8aast3i61mqm0he912hinhi95pt3t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,82 @@
+name: Release APK
+
+# Push a tag like v1.2.0 (on main) and this builds the signed APK and publishes the release.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to (re)build, e.g. v1.2.0'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.0
+          cache: true
+
+      - name: Version matches the tag
+        run: |
+          echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
+          v=$(grep -E '^version:' pubspec.yaml | sed -E 's/version: *([0-9.]+).*/\1/')
+          [ "v$v" = "$TAG" ] || { echo "pubspec version v$v does not match tag $TAG"; exit 1; }
+
+      - name: Signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+            printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=%s\nstoreFile=upload-keystore.jks\n' \
+              "$KEYSTORE_PASSWORD" "$KEY_PASSWORD" "$KEY_ALIAS" > android/key.properties
+          else
+            echo "No KEYSTORE_BASE64 secret provided; building with default signing."
+          fi
+
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+      - run: flutter build apk --release --target-platform android-arm,android-arm64
+
+      - name: Collect APK
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk shelfwise.apk
+          echo "SHA=$(sha256sum shelfwise.apk | cut -d' ' -f1)" >> "$GITHUB_ENV"
+          notes=".github/release-notes/$TAG.md"
+          [ -f "$notes" ] || printf 'Shelfwise %s\n' "${TAG#v}" > "$notes"
+          cp "$notes" release-notes.md
+          printf '\nSHA-256: `%s`\n' "$(sha256sum shelfwise.apk | cut -d' ' -f1)" >> release-notes.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: Shelfwise ${{ env.VERSION }}
+          body_path: release-notes.md
+          files: shelfwise.apk
+          make_latest: true
+
+      - name: Clean up signing material
+        if: always()
+        run: rm -f android/app/upload-keystore.jks android/key.properties

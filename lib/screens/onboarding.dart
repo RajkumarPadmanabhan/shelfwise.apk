@@ -11,7 +11,6 @@ import '../services/notify.dart';
 import '../services/sfx.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
-import '../widgets/dialogs.dart';
 
 Route<void> introRoute() => PageRouteBuilder(
       transitionDuration: const Duration(milliseconds: 450),

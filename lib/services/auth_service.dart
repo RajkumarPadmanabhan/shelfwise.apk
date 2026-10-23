@@ -31,7 +31,7 @@ class AuthService {
       // Sign in to Firebase with the credential
       return await _auth.signInWithCredential(credential);
     } catch (e) {
-      print('Google sign-in error: $e');
+      debugPrint('Google sign-in error: $e');
       rethrow;
     }
   }

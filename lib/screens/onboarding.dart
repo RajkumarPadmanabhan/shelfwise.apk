@@ -6,6 +6,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../art.dart';
 import '../data/store.dart';
 import '../look.dart';
+import '../services/auth_service.dart';
 import '../services/notify.dart';
 import '../services/sfx.dart';
 import '../theme.dart';
@@ -196,232 +197,6 @@ const googleLogoSvg = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48
   <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
 </svg>''';
 
-class GoogleAccountItem {
-  final String name;
-  final String email;
-  final Color color;
-  const GoogleAccountItem(this.name, this.email, this.color);
-}
-
-Future<String?> openGoogleAccountChooser(BuildContext context, {String? currentEmail}) async {
-  final accounts = <GoogleAccountItem>[
-    const GoogleAccountItem('Rajkumar Padmanabhan', 'rajkumarpadmanabhan@gmail.com', Color(0xFF4285F4)),
-    const GoogleAccountItem('Rajkumar (Personal)', 'rajkumar.reading@gmail.com', Color(0xFFFBBC05)),
-    const GoogleAccountItem('Reader Sanctuary', 'reader.sanctuary@gmail.com', Color(0xFF34A853)),
-  ];
-
-  if (currentEmail != null && currentEmail.isNotEmpty) {
-    if (!accounts.any((a) => a.email.toLowerCase() == currentEmail.toLowerCase())) {
-      accounts.insert(
-        0,
-        GoogleAccountItem(
-          AppStore.nameFromEmail(currentEmail),
-          currentEmail,
-          const Color(0xFFEA4335),
-        ),
-      );
-    }
-  }
-
-  final manualController = TextEditingController(text: currentEmail ?? '');
-  var manual = false;
-  var err = '';
-
-  final result = await openDialog<String>((ctx) => StatefulBuilder(
-        builder: (ctx, setDlgState) {
-          void submitManual() {
-            final em = manualController.text.trim();
-            if (em.isEmpty) {
-              setDlgState(() => err = 'Please enter your Google email');
-              Buzz.medium();
-              return;
-            }
-            final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-            if (!emailRegex.hasMatch(em)) {
-              setDlgState(() => err = 'Enter a valid email (e.g. name@gmail.com)');
-              Buzz.medium();
-              return;
-            }
-            Buzz.tick();
-            Sfx.play('pop');
-            Navigator.of(ctx).pop(em);
-          }
-
-          void appendGmail() {
-            final cur = manualController.text.trim();
-            if (!cur.contains('@') && cur.isNotEmpty) {
-              manualController.text = '$cur@gmail.com';
-              manualController.selection = TextSelection.fromPosition(TextPosition(offset: manualController.text.length));
-              setDlgState(() => err = '');
-            }
-          }
-
-          if (manual) {
-            return AppDialog(
-              title: 'Enter Google email',
-              children: [
-                const Sub('Type your Google email address to personalize your reading shelves.'),
-                const SizedBox(height: 6),
-                AppInput(
-                  manualController,
-                  'you@gmail.com',
-                  type: TextInputType.emailAddress,
-                  caps: TextCapitalization.none,
-                  autofocus: true,
-                  maxLength: 80,
-                  onChanged: (_) => setDlgState(() => err = ''),
-                  onSubmitted: (_) => submitManual(),
-                ),
-                if (!manualController.text.contains('@') && manualController.text.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 4, bottom: 2),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: GestureDetector(
-                        onTap: appendGmail,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEDE7DF),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Text('+ @gmail.com',
-                              style: TextStyle(fontFamily: F.sans, fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6A5A4A))),
-                        ),
-                      ),
-                    ),
-                  ),
-                ErrText(err),
-              ],
-              actions: [
-                Btn('Back', onTap: () {
-                  setDlgState(() => manual = false);
-                  return false;
-                }),
-                Btn('Continue', kind: Kind.pri, onTap: () {
-                  submitManual();
-                  return false;
-                }),
-              ],
-            );
-          }
-
-          return AppDialog(
-            children: [
-              Row(
-                children: [
-                  SvgPicture.string(googleLogoSvg, width: 28, height: 28),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Choose an account', style: nu(18, FontWeight.w800, C.ink, 1.2)),
-                        const SizedBox(height: 2),
-                        Text('to continue to Shelfwise', style: nu(13, FontWeight.w600, C.muted)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              const Divider(height: 1, thickness: 1, color: Color(0x1F000000)),
-              const SizedBox(height: 6),
-              for (final acc in accounts)
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () {
-                      Buzz.tick();
-                      Sfx.play('pop');
-                      Navigator.of(ctx).pop(acc.email);
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: acc.color,
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              acc.name.isNotEmpty ? acc.name[0].toUpperCase() : 'G',
-                              style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 16),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(acc.name, style: nu(14.5, FontWeight.w700, C.ink)),
-                                Text(acc.email, style: nu(12.5, FontWeight.w500, C.muted)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 4),
-              const Divider(height: 1, thickness: 1, color: Color(0x1F000000)),
-              const SizedBox(height: 4),
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () {
-                    Buzz.tick();
-                    setDlgState(() => manual = true);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 38,
-                          height: 38,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Color(0x18000000),
-                          ),
-                          alignment: Alignment.center,
-                          child: Icon(Icons.person_add_alt_1_outlined, size: 20, color: C.ink),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Use another account', style: nu(14.5, FontWeight.w700, C.ink)),
-                              Text('Type email manually', style: nu(12.5, FontWeight.w500, C.muted)),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.chevron_right_rounded, size: 20, color: C.muted),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-            actions: const [
-              Btn('Cancel'),
-            ],
-          );
-        },
-      ));
-
-  manualController.dispose();
-  return result;
-}
-
 class _Welcome extends StatefulWidget {
   final TextEditingController email;
   final bool replay;
@@ -461,9 +236,16 @@ class _WelcomeState extends State<_Welcome> with TickerProviderStateMixin {
 
   Future<void> _openGoogleChooser() async {
     Buzz.tick();
-    final chosen = await openGoogleAccountChooser(context, currentEmail: widget.email.text);
-    if (chosen != null && chosen.isNotEmpty) {
-      widget.onSelectEmail(chosen);
+    try {
+      final userCred = await AuthService.signInWithGoogle();
+      if (userCred != null && userCred.user != null) {
+        final email = userCred.user!.email ?? '';
+        if (email.isNotEmpty) {
+          widget.onSelectEmail(email);
+        }
+      }
+    } catch (e) {
+      debugPrint('Google sign in error: $e');
     }
   }
 
@@ -657,11 +439,18 @@ class _GoogleStepState extends State<_GoogleStep> with TickerProviderStateMixin 
   }
 
   Future<void> _openGoogleDialog() async {
-    final chosen = await openGoogleAccountChooser(context, currentEmail: widget.email.text);
-    if (chosen != null && chosen.isNotEmpty) {
-      widget.email.text = chosen;
-      setState(() {});
-      widget.onGo();
+    try {
+      final userCred = await AuthService.signInWithGoogle();
+      if (userCred != null && userCred.user != null) {
+        final email = userCred.user!.email ?? '';
+        if (email.isNotEmpty) {
+          widget.email.text = email;
+          setState(() {});
+          widget.onGo();
+        }
+      }
+    } catch (e) {
+      debugPrint('Google sign in error: $e');
     }
   }
 

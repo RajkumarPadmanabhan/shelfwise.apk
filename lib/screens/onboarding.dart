@@ -236,14 +236,25 @@ class _WelcomeState extends State<_Welcome> with TickerProviderStateMixin {
   Future<void> _openGoogleChooser() async {
     Buzz.tick();
     try {
-      final userCred = await AuthService.signInWithGoogle();
-      if (userCred != null && userCred.user != null) {
-        final email = userCred.user!.email ?? '';
+      final userCredential = await AuthService.signInWithGoogle();
+      if (userCredential != null) {
+        final user = userCredential.user;
+        final email = user?.email ?? '';
         if (email.isNotEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Signed in as ${user?.displayName ?? email}')),
+            );
+          }
           widget.onSelectEmail(email);
         }
       }
     } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign-in failed: $e')),
+        );
+      }
       debugPrint('Google sign in error: $e');
     }
   }
@@ -439,16 +450,27 @@ class _GoogleStepState extends State<_GoogleStep> with TickerProviderStateMixin 
 
   Future<void> _openGoogleDialog() async {
     try {
-      final userCred = await AuthService.signInWithGoogle();
-      if (userCred != null && userCred.user != null) {
-        final email = userCred.user!.email ?? '';
+      final userCredential = await AuthService.signInWithGoogle();
+      if (userCredential != null) {
+        final user = userCredential.user;
+        final email = user?.email ?? '';
         if (email.isNotEmpty) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Signed in as ${user?.displayName ?? email}')),
+            );
+          }
           widget.email.text = email;
           setState(() {});
           widget.onGo();
         }
       }
     } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign-in failed: $e')),
+        );
+      }
       debugPrint('Google sign in error: $e');
     }
   }

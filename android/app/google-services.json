@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "496935493651-om1hrmiuh5lhbu2p97df4rb7jp35e3il.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.github.mrwhoroot.shelfwise",
+            "certificate_hash": "b47673ff89a9e3d3acc85accdfd5547c0417822c"
+          }
+        },
+        {
           "client_id": "496935493651-vliu7m95ru6jjoihkl987ufnvoolmoic.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

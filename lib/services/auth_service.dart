@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -32,7 +31,8 @@ class AuthService {
       // Sign in to Firebase with the credential
       return await _auth.signInWithCredential(credential);
     } catch (e) {
-      debugPrint('Google sign-in error: $e');
+      // ignore: avoid_print
+      print('Google sign-in error: $e');
       rethrow;
     }
   }
